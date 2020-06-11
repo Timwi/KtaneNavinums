@@ -11,10 +11,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 615501dbe4f3fe94fbf4b564abb10237, type: 3}
   m_Name: ModConfig
   m_EditorClassIdentifier: 
-  id: 
-  title: 
+  id: navinums
+  title: Navinums
   author: Goofy
-  description: 
+  description: 'Press the correct digits and keep track of the directions.
+
+
+    Module idea by Pruz.'
   version: 1.0
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: 7f59d29aa9dc0ef41ae7086ad8671928, type: 3}
