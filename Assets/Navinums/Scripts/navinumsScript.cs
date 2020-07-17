@@ -212,12 +212,14 @@ public class navinumsScript : MonoBehaviour
         directionsSorted.AddRange(directions);
         directionsSorted.Sort();
         Debug.LogFormat(@"[Navinums #{0}] Stage {1} - Directions are in reading order: {2}.", moduleId, stage + 1, directions.Join(", "));
+        Debug.LogFormat(@"[Navinums #{0}] Stage {1} - Correct direction to press is: {2}.", moduleId, stage + 1, directionsSorted[lookUp[center - 1][stage] - 1]);
         for (int i = 0; i < Displays.Length; i++)
             Digits[i].text = i < 4 ? directions[i].ToString() : center.ToString();
     }
 
     private IEnumerator PhaseTwo()
     {
+        Debug.LogFormat(@"[Navinums #{0}] The correct center digit is: {1}", moduleId, grid[y][x]);
         var numbers = Enumerable.Range(1, 9).ToList().Shuffle();
         var c = 0;
         while (!moduleSolved)
