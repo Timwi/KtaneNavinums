@@ -55,11 +55,8 @@ public class navinumsScript : MonoBehaviour
                 return false;
             Displays[btn].AddInteractionPunch();
             Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, Displays[btn].transform);
-            if (stage > 7)
-            {
-                if (btn == 4)
-                    CenterPressed();
-            }
+            if (btn == 4)
+                StartCoroutine(CenterPressed());
             else
                 DirectionPressed(btn);
             return false;
@@ -127,22 +124,67 @@ public class navinumsScript : MonoBehaviour
         }
     }
 
-    void CenterPressed()
+    IEnumerator CenterPressed()
     {
-        if (middleDisplayedDigit == grid[y][x])
+        release = false;
+        var elapsed = 0f;
+        while (elapsed < 2f)
         {
-            moduleSolved = true;
-            Module.HandlePass();
-            for (int i = 0; i < Digits.Length; i++)
+            yield return null;
+            if (release)
+                break;
+            elapsed += Time.deltaTime;
+        }
+        if (elapsed < 2f && !tpReset)
+        {
+            if (stage > 7)
             {
-                Digits[i].text = "↑,←,→,↓,Solved".Split(',')[i];
-                Digits[i].characterSize = i < 4 ? Digits[i].characterSize / 2 : Digits[i].characterSize / 4;
-                Digits[i].color = new Color32(0, 255, 0, 255);
-            }
+                if (middleDisplayedDigit == grid[y][x])
+                {
+                    moduleSolved = true;
+                    Module.HandlePass();
+                    for (int i = 0; i < Digits.Length; i++)
+                    {
+                        Digits[i].text = "↑,←,→,↓,Solved".Split(',')[i];
+                        Digits[i].characterSize = i < 4 ? Digits[i].characterSize / 2 : Digits[i].characterSize / 4;
+                        Digits[i].color = new Color32(0, 255, 0, 255);
+                    }
 
+                }
+                else
+                    Module.HandleStrike();
+            }
         }
         else
-            Module.HandleStrike();
+        {
+            Debug.LogFormat(@"[Navinums #{0}] Reset initiated!", moduleId, rnd.Seed);
+            if (phaseTwo != null)
+            {
+                StopCoroutine(phaseTwo);
+                phaseTwo = null;
+            }
+            var duration = 3f;
+            elapsed = 0f;
+            var cycler = StartCoroutine(Cycler());
+            while (elapsed < duration)
+            {
+                yield return null;
+                elapsed += Time.deltaTime;
+            }
+            StopCoroutine(cycler);
+            Setup();
+            tpReset = false;
+        }
+    }
+
+    private IEnumerator Cycler()
+    {
+        while (true)
+        {
+            for (var i = 0; i < Digits.Length; i++)
+                Digits[i].text = Random.Range(1, 10).ToString();
+            yield return new WaitForSeconds(.1f);
+        }
     }
 
     void Start()
@@ -154,17 +196,20 @@ public class navinumsScript : MonoBehaviour
             Displays[i].OnInteract += DisplayPress(i);
         }
 
+        Displays[4].OnInteractEnded += delegate
+        {
+            release = true;
+        };
 
-        center = Random.Range(1, 10);
+        rnd = RuleSeedable.GetRNG();
+        Debug.LogFormat(@"[Navinums #{0}] Using Ruleseed {1}", moduleId, rnd.Seed);
         Setup();
-        Debug.LogFormat(@"[Navinums #{0}] Center Display is: {1}.", moduleId, center);
-        GenerateStage();
-
     }
 
     void Setup()
     {
-        var rnd = RuleSeedable.GetRNG();
+        stage = -1;
+        center = Random.Range(1, 10);
         var gridDigits = Enumerable.Range(1, 9).ToList();
         rnd.ShuffleFisherYates(gridDigits);
         var counter = 0;
@@ -184,14 +229,14 @@ public class navinumsScript : MonoBehaviour
             for (int j = 0; j < lookUp[i].Length; j++)
                 lookUp[i][j] = rnd.Next(1, 5);
 
-        Debug.LogFormat(@"[Navinums #{0}] Using Ruleseed {1}", moduleId, rnd.Seed);
+        Debug.LogFormat(@"[Navinums #{0}] Center Display is: {1}.", moduleId, center);
         Debug.LogFormat(@"[Navinums #{0}] Using the following grid:", moduleId);
         for (int i = 0; i < grid.Length; i++)
             Debug.LogFormat(@"[Navinums #{0}] {1}", moduleId, grid[i].Join(", "));
         Debug.LogFormat(@"[Navinums #{0}] Using the following lookups:", moduleId);
         for (int i = 0; i < lookUp.Length; i++)
             Debug.LogFormat(@"[Navinums #{0}] {1}: {2}", moduleId, i + 1, lookUp[i].Join(", "));
-
+        GenerateStage();
     }
 
     void GenerateStage()
@@ -201,7 +246,7 @@ public class navinumsScript : MonoBehaviour
         {
             for (int i = 0; i < Displays.Length; i++)
                 Digits[i].text = "";
-            StartCoroutine(PhaseTwo());
+            phaseTwo = StartCoroutine(PhaseTwo());
             return;
         }
         directions.Clear();
@@ -232,7 +277,11 @@ public class navinumsScript : MonoBehaviour
     }
 
 #pragma warning disable 414
-    public static string TwitchHelpMessage = @"!{0} top,left,right,bottom 0,1,2,3 n,w,e,s [press the corresponding display] | !{0} center/4/m <digit> [press the center display when the specified digit is shown]";
+    public static string TwitchHelpMessage = @"!{0} top,left,right,bottom 0,1,2,3 n,w,e,s [press the corresponding display] | !{0} center/4/m <digit> [press the center display when the specified digit is shown] | !{0} reset [Resets the module back to stage 1 and generates new]";
+    private bool release;
+    private MonoRandom rnd;
+    private Coroutine phaseTwo;
+    private bool tpReset;
 #pragma warning restore 414
 
     IEnumerator ProcessTwitchCommand(string command)
@@ -256,12 +305,17 @@ public class navinumsScript : MonoBehaviour
         }
         else
         {
-            if (stage > 7)
+            if (Regex.IsMatch(command, @"^\s*reset\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+            {
+                yield return null;
+                tpReset = true;
+                yield return new[] { Displays[4] };
+            }
+            else if (stage > 7)
             {
                 yield return "sendtochaterror Invalid command for the second stage of this module.";
                 yield break;
             }
-
             // Untimed command
             else if (Regex.IsMatch(command, @"^\s*(?:top|t|0|north|n|up|u)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
             {
@@ -283,6 +337,7 @@ public class navinumsScript : MonoBehaviour
                 yield return null;
                 yield return new[] { Displays[3] };
             }
+
         }
     }
 
