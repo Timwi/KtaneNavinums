@@ -46,6 +46,12 @@ public class navinumsScript : MonoBehaviour
     List<int> directions = new List<int>();
     List<int> directionsSorted = new List<int>();
     int center;
+    private List<int> gridDigits;
+    private bool release;
+    private MonoRandom rnd;
+    private Coroutine phaseTwo;
+    private bool tpReset;
+    private bool alreadyInitialized = false;
 
     KMSelectable.OnInteractHandler DisplayPress(int btn)
     {
@@ -203,6 +209,7 @@ public class navinumsScript : MonoBehaviour
 
         rnd = RuleSeedable.GetRNG();
         Debug.LogFormat(@"[Navinums #{0}] Using Ruleseed {1}", moduleId, rnd.Seed);
+        gridDigits = Enumerable.Range(1, 9).ToList();
         Setup();
     }
 
@@ -210,8 +217,8 @@ public class navinumsScript : MonoBehaviour
     {
         stage = -1;
         center = Random.Range(1, 10);
-        var gridDigits = Enumerable.Range(1, 9).ToList();
-        rnd.ShuffleFisherYates(gridDigits);
+        if (!alreadyInitialized)
+            rnd.ShuffleFisherYates(gridDigits);
         var counter = 0;
         for (int i = 0; i < grid.Length; i++)
             for (int j = 0; j < grid[i].Length; j++)
@@ -224,11 +231,12 @@ public class navinumsScript : MonoBehaviour
                 }
                 counter++;
             }
-
+        if(!alreadyInitialized)
         for (int i = 0; i < lookUp.Length; i++)
             for (int j = 0; j < lookUp[i].Length; j++)
                 lookUp[i][j] = rnd.Next(1, 5);
 
+        alreadyInitialized = true;
         Debug.LogFormat(@"[Navinums #{0}] Center Display is: {1}.", moduleId, center);
         Debug.LogFormat(@"[Navinums #{0}] Using the following grid:", moduleId);
         for (int i = 0; i < grid.Length; i++)
@@ -278,10 +286,6 @@ public class navinumsScript : MonoBehaviour
 
 #pragma warning disable 414
     public static string TwitchHelpMessage = @"!{0} top,left,right,bottom 0,1,2,3 n,w,e,s [press the corresponding display] | !{0} center/4/m <digit> [press the center display when the specified digit is shown] | !{0} reset [Resets the module back to stage 1 and generates new]";
-    private bool release;
-    private MonoRandom rnd;
-    private Coroutine phaseTwo;
-    private bool tpReset;
 #pragma warning restore 414
 
     IEnumerator ProcessTwitchCommand(string command)
