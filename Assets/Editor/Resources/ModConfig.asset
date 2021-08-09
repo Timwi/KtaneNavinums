@@ -14,10 +14,10 @@ MonoBehaviour:
   id: navinums
   title: Navinums
   author: Goofy
-  description: 'Press the correct digits and keep track of the directions.
-
-
-    Module idea by Pruz.'
+  description: "[b]This is a re-upload of Goofy\u2019s original module with bugfixes
+    and improvements. Please [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2122696052]UNSUBSCRIBE
+    from the old version[/url].[/b]\n\nPress the correct digits and keep track of
+    the directions.\n\nModule idea by Pruz, implemented by Goofy, maintained by Timwi."
   version: 1.0
   outputFolder: build
-  previewImage: {fileID: 2800000, guid: 7f59d29aa9dc0ef41ae7086ad8671928, type: 3}
+  previewImage: {fileID: 2800000, guid: e068f115283e3994f8ca94c114aa4a62, type: 3}
