@@ -231,10 +231,10 @@ public class navinumsScript : MonoBehaviour
                 }
                 counter++;
             }
-        if(!alreadyInitialized)
-        for (int i = 0; i < lookUp.Length; i++)
-            for (int j = 0; j < lookUp[i].Length; j++)
-                lookUp[i][j] = rnd.Next(1, 5);
+        if (!alreadyInitialized)
+            for (int i = 0; i < lookUp.Length; i++)
+                for (int j = 0; j < lookUp[i].Length; j++)
+                    lookUp[i][j] = rnd.Next(1, 5);
 
         alreadyInitialized = true;
         Debug.LogFormat(@"[Navinums #{0}] Center Display is: {1}.", moduleId, center);
@@ -305,43 +305,40 @@ public class navinumsScript : MonoBehaviour
             var digit = int.Parse(m.Groups[1].Value);
             while (middleDisplayedDigit != digit)
                 yield return "trycancel";
+            Displays[4].OnInteract();
+            yield return new WaitForSeconds(.1f);
+        }
+        else if (Regex.IsMatch(command, @"^\s*reset\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            tpReset = true;
             yield return new[] { Displays[4] };
         }
-        else
+        else if (stage > 7)
         {
-            if (Regex.IsMatch(command, @"^\s*reset\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-            {
-                yield return null;
-                tpReset = true;
-                yield return new[] { Displays[4] };
-            }
-            else if (stage > 7)
-            {
-                yield return "sendtochaterror Invalid command for the second stage of this module.";
-                yield break;
-            }
-            // Untimed command
-            else if (Regex.IsMatch(command, @"^\s*(?:top|t|0|north|n|up|u)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-            {
-                yield return null;
-                yield return new[] { Displays[0] };
-            }
-            else if (Regex.IsMatch(command, @"^\s*(?:left|l|1|west|w)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-            {
-                yield return null;
-                yield return new[] { Displays[1] };
-            }
-            else if (Regex.IsMatch(command, @"^\s*(?:right|r|2|east|e)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-            {
-                yield return null;
-                yield return new[] { Displays[2] };
-            }
-            else if (Regex.IsMatch(command, @"^\s*(?:bottom|b|3|south|s|down|d)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-            {
-                yield return null;
-                yield return new[] { Displays[3] };
-            }
-
+            yield return "sendtochaterror Invalid command for the second stage of this module.";
+            yield break;
+        }
+        // Untimed command
+        else if (Regex.IsMatch(command, @"^\s*(?:top|t|0|north|n|up|u)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            yield return new[] { Displays[0] };
+        }
+        else if (Regex.IsMatch(command, @"^\s*(?:left|l|1|west|w)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            yield return new[] { Displays[1] };
+        }
+        else if (Regex.IsMatch(command, @"^\s*(?:right|r|2|east|e)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            yield return new[] { Displays[2] };
+        }
+        else if (Regex.IsMatch(command, @"^\s*(?:bottom|b|3|south|s|down|d)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            yield return new[] { Displays[3] };
         }
     }
 
