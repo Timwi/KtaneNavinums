@@ -50,7 +50,6 @@ public class navinumsScript : MonoBehaviour
     private bool release;
     private MonoRandom rnd;
     private Coroutine phaseTwo;
-    private bool tpReset;
     private bool alreadyInitialized = false;
 
     KMSelectable.OnInteractHandler DisplayPress(int btn)
@@ -141,27 +140,24 @@ public class navinumsScript : MonoBehaviour
                 break;
             elapsed += Time.deltaTime;
         }
-        if (elapsed < 2f && !tpReset)
+        if (elapsed < 2f && stage > 7)
         {
-            if (stage > 7)
+            if (middleDisplayedDigit == grid[y][x])
             {
-                if (middleDisplayedDigit == grid[y][x])
+                moduleSolved = true;
+                Module.HandlePass();
+                for (int i = 0; i < Digits.Length; i++)
                 {
-                    moduleSolved = true;
-                    Module.HandlePass();
-                    for (int i = 0; i < Digits.Length; i++)
-                    {
-                        Digits[i].text = "↑,←,→,↓,Solved".Split(',')[i];
-                        Digits[i].characterSize = i < 4 ? Digits[i].characterSize / 2 : Digits[i].characterSize / 4;
-                        Digits[i].color = new Color32(0, 255, 0, 255);
-                    }
-
+                    Digits[i].text = "↑,←,→,↓,Solved".Split(',')[i];
+                    Digits[i].characterSize = i < 4 ? Digits[i].characterSize / 2 : Digits[i].characterSize / 4;
+                    Digits[i].color = new Color32(0, 255, 0, 255);
                 }
-                else
-                    Module.HandleStrike();
+
             }
+            else
+                Module.HandleStrike();
         }
-        else
+        else if (elapsed >= 2f)
         {
             Debug.LogFormat(@"[Navinums #{0}] Reset initiated!", moduleId, rnd.Seed);
             if (phaseTwo != null)
@@ -169,17 +165,10 @@ public class navinumsScript : MonoBehaviour
                 StopCoroutine(phaseTwo);
                 phaseTwo = null;
             }
-            var duration = 3f;
-            elapsed = 0f;
             var cycler = StartCoroutine(Cycler());
-            while (elapsed < duration)
-            {
-                yield return null;
-                elapsed += Time.deltaTime;
-            }
+            yield return new WaitForSeconds(3f);
             StopCoroutine(cycler);
             Setup();
-            tpReset = false;
         }
     }
 
@@ -188,7 +177,7 @@ public class navinumsScript : MonoBehaviour
         while (true)
         {
             for (var i = 0; i < Digits.Length; i++)
-                Digits[i].text = Random.Range(1, 10).ToString();
+                Digits[i].text = Random.Range(0, 10).ToString();
             yield return new WaitForSeconds(.1f);
         }
     }
@@ -198,14 +187,9 @@ public class navinumsScript : MonoBehaviour
         moduleId = moduleIdCounter++;
 
         for (int i = 0; i < Displays.Length; i++)
-        {
             Displays[i].OnInteract += DisplayPress(i);
-        }
 
-        Displays[4].OnInteractEnded += delegate
-        {
-            release = true;
-        };
+        Displays[4].OnInteractEnded += delegate { release = true; };
 
         rnd = RuleSeedable.GetRNG();
         Debug.LogFormat(@"[Navinums #{0}] Using Ruleseed {1}", moduleId, rnd.Seed);
@@ -303,16 +287,19 @@ public class navinumsScript : MonoBehaviour
             yield return null;
 
             var digit = int.Parse(m.Groups[1].Value);
+            while (middleDisplayedDigit == digit)
+                yield return "trycancel";
             while (middleDisplayedDigit != digit)
                 yield return "trycancel";
-            Displays[4].OnInteract();
-            yield return new WaitForSeconds(.1f);
+            yield return new[] { Displays[4] };
         }
         else if (Regex.IsMatch(command, @"^\s*reset\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
             yield return null;
-            tpReset = true;
-            yield return new[] { Displays[4] };
+            yield return Displays[4];
+            yield return new WaitForSeconds(2.2f);
+            yield return Displays[4];
+            yield return new WaitForSeconds(.1f);
         }
         else if (stage > 7)
         {
