@@ -347,5 +347,6 @@ public class navinumsScript : MonoBehaviour
 
         Displays[4].OnInteract();
         yield return new WaitForSeconds(.1f);
+        Displays[4].OnInteractEnded();
     }
 }
